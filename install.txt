@@ -1,0 +1,9 @@
+Simple Install
+1. Login to WordPress and go to Plugins > Add New > Upload
+2. Upload social-sharing-booster.zip and activate
+3. Change settings via the "Social Sharing" menu that appears
+
+Manual Install
+1. Upload the social-sharing-booster folder to your /wp-content/plugins/ directory
+2. Activate the plugin through the Plugins menu in WordPress
+3. Change settings via the "Social Sharing" menu that appears

@@ -1,0 +1,4 @@
+*** Social Sharing Booster WordPress Plugin Changelog ***
+
+2014.07.09 - version 0.1.0
+ * Initial release
