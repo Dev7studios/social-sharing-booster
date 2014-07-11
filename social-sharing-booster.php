@@ -3,7 +3,7 @@
 Plugin Name: Social Sharing Booster
 Plugin URI: http://dev7studios.com/plugins/social-sharing-booster
 Description: Automatically make your content look the best it can when it is shared on Facebook, Twitter, Pinterest, Google+ etc.
-Version: 0.1.0
+Version: 1.0.0
 Author: Dev7studios
 Author URI: http://dev7studios.com
 */
@@ -13,6 +13,10 @@ class Dev7SocialSharingBooster {
     private $plugin_path;
     private $plugin_url;
     private $wpsf;
+    private $dev7_store_url = 'http://dev7studios.com';
+    private $dev7_item_name = 'Social Sharing Booster WordPress Plugin';
+    private $plugin_version = '1.0.0';
+    private $plugin_author = 'Dev7studios';
 
     public function __construct()
     {
@@ -30,6 +34,20 @@ class Dev7SocialSharingBooster {
         add_action( 'admin_menu', array(&$this, 'admin_menu') );
         add_filter( $this->wpsf->get_option_group() .'_settings_validate', array(&$this, 'validate_settings') );
         add_action( 'wp_head', array(&$this, 'wp_head') );
+
+        if( !class_exists('EDD_SL_Plugin_Updater') ){
+        	require_once( $this->plugin_path .'EDD_SL_Plugin_Updater.php' );
+        }
+        $license_key = wpsf_get_setting( 'dev7_ssb_settings', 'dev7studios', 'license_key' );
+        if( $license_key ){
+            $edd_updater = new EDD_SL_Plugin_Updater( $this->dev7_store_url, __FILE__, array(
+                'version'   => $this->plugin_version,
+                'license'   => $license_key,
+                'item_name' => $this->dev7_item_name,
+                'author'    => $this->plugin_author,
+                'url'       => home_url()
+            ) );
+        }
     }
 
     public function init()
@@ -60,6 +78,15 @@ class Dev7SocialSharingBooster {
 
     public function validate_settings( $input )
 	{
+        $prefix = 'dev7_ssb_settings_';
+        $input[$prefix .'dev7studios_license_key']  = filter_var( $input[$prefix .'dev7studios_license_key'], FILTER_SANITIZE_STRING );
+        $input[$prefix .'general_site_title']       = filter_var( $input[$prefix .'general_site_title'], FILTER_SANITIZE_STRING );
+        $input[$prefix .'general_tagline']          = filter_var( $input[$prefix .'general_tagline'], FILTER_SANITIZE_STRING );
+        $input[$prefix .'facebook_admins']          = filter_var( $input[$prefix .'facebook_admins'], FILTER_SANITIZE_STRING );
+        $input[$prefix .'facebook_app_id']          = filter_var( $input[$prefix .'facebook_app_id'], FILTER_SANITIZE_STRING );
+        $input[$prefix .'facebook_publisher']       = filter_var( $input[$prefix .'facebook_publisher'], FILTER_SANITIZE_URL );
+        $input[$prefix .'twitter_site_username']    = filter_var( $input[$prefix .'twitter_site_username'], FILTER_SANITIZE_STRING );
+        $input[$prefix .'twitter_creator_username'] = filter_var( $input[$prefix .'twitter_creator_username'], FILTER_SANITIZE_STRING );
     	return $input;
 	}
 

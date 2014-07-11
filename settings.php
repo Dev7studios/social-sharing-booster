@@ -4,6 +4,21 @@ add_filter( 'wpsf_register_settings', 'dev7_ssb_settings' );
 function dev7_ssb_settings( $wpsf_settings ) {
 
     $wpsf_settings[] = array(
+        'section_id' => 'dev7studios',
+        'section_title' => __( 'Plugin Settings', 'dev7-ssb' ),
+        'section_description' => '',
+        'section_order' => 1,
+        'fields' => array(
+            array(
+                'id' => 'license_key',
+                'title' => __( 'License Key', 'dev7-ssb' ),
+                'desc' => __( 'Enter the license key you received with the plugin to receive automatic updates', 'dev7-ssb' ),
+                'type' => 'text'
+            ),
+        )
+    );
+
+    $wpsf_settings[] = array(
         'section_id' => 'general',
         'section_title' => __( 'General Settings', 'dev7-ssb' ),
         'section_description' => __( 'Settings that apply to all publishers.', 'dev7-ssb' ),
