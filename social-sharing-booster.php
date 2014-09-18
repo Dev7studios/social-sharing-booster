@@ -59,7 +59,7 @@ class Dev7SocialSharingBooster {
 
     public function admin_menu()
     {
-        add_menu_page( 'Social Sharing Booster', 'Social Sharing', 'manage_options', 'dev7-social-sharing-booster', array(&$this, 'settings'), 'dashicons-share-alt2', 100 );
+        add_menu_page( 'Social Sharing Booster', 'Social Sharing', 'manage_options', 'dev7-social-sharing-booster', array(&$this, 'settings'), 'dashicons-share-alt2', 120 );
     }
 
     public function settings()
