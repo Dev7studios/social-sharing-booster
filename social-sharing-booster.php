@@ -339,6 +339,7 @@ class Dev7SocialSharingBooster {
             }
         }
 
+        // Add the notice if there are conflicts.
         if ( 'no-conflict' != $this->plugin_conflicts ) {
             add_action( 'admin_notices', array( $this, 'plugin_compatibility_notice' ), 99 );
         }
@@ -347,7 +348,7 @@ class Dev7SocialSharingBooster {
     /**
      * Performs activated plugin and specific tests on suspect plugins.
      *
-     * @param  array $incompatible_plugin The plugin data being tested.
+     * @param array $incompatible_plugin The plugin data being tested.
      *
      * @return string `conflict` if the plugin is active or shows conflicts, otherwise `no-conflict`.
      */
@@ -389,6 +390,9 @@ class Dev7SocialSharingBooster {
          *
          * Skipped if one of the above tests are preferred.
          *
+         * Does a blanket test if the plugin is active, as the only solution
+         * would be to de-activate it.
+         *
          * If the plugin is active, return as being in conflict.
          */
         if( 'active' == $this->is_conflicting_plugin_active( $incompatible_plugin ) ) {
@@ -400,12 +404,12 @@ class Dev7SocialSharingBooster {
     }
 
     /**
-     * Detects if a plugin is activated or not.
+     * Detects if a suspect plugin is activated or not.
      *
      * Test more than just `is_plugin_active()` as sometimes code changes
      * or file structures move things around.
      *
-     * @param array  $incompatible_plugin A plugin that might be considered for conflicts.
+     * @param array $incompatible_plugin A plugin that might be considered for conflicts.
      *
      * @return string `active` if the plugin is found activated, `inactive` if not.
      */
@@ -432,6 +436,9 @@ class Dev7SocialSharingBooster {
     /**
      * Output a notice when a plugin conflict is found.
      *
+     * Notice added via `admin_notices`
+     * in Dev7SocialSharingBooster::plugin_compatibility_check().
+     *
      * @return void Outputs the notice.
      */
     public function plugin_compatibility_notice() {
@@ -449,10 +456,8 @@ class Dev7SocialSharingBooster {
                 // Build a string list of plugins.
                 $plugins .= "{$conflicted_plugin['plugin_name']}, ";
 
-                // Remove comma on just one plugin.
-                if ( sizeof( $this->plugin_conflicts ) == 1 ) {
-                    $plugins = rtrim( $plugins, ", " );
-                }
+                // Remove trailing comma.
+                $plugins = rtrim( $plugins, ", " );
 
                 // Don't suggest the same suggestion twice.
                 if ( $last_suggestion != $conflicted_plugin['suggestion'] ) {
