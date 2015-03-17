@@ -17,6 +17,7 @@ class Dev7SocialSharingBooster {
     private $dev7_item_name = 'Social Sharing Booster WordPress Plugin';
     private $plugin_version = '1.0.0';
     private $plugin_author = 'Dev7studios';
+    private $plugin_conflicts = 'no-conflict';
 
     public function __construct()
     {
@@ -34,6 +35,9 @@ class Dev7SocialSharingBooster {
         add_action( 'admin_menu', array(&$this, 'admin_menu') );
         add_filter( $this->wpsf->get_option_group() .'_settings_validate', array(&$this, 'validate_settings') );
         add_action( 'wp_head', array(&$this, 'wp_head') );
+
+        // Run plugin compatibility/conflict checks.
+        add_action( 'admin_init', array( $this, 'plugin_compatibility_check' ) );
 
         if( !class_exists('EDD_SL_Plugin_Updater') ){
         	require_once( $this->plugin_path .'EDD_SL_Plugin_Updater.php' );
@@ -255,5 +259,210 @@ class Dev7SocialSharingBooster {
         return apply_filters( 'dev7_ssb_meta_tag', $output, $property, $content, $prop );
     }
 
+    /**
+     * Checks for plugin incompatibilities and pushes a notice if there is one.
+     *
+     * Runs based on a filter defined in __construct().
+     *
+     * @return void Ends up with a notice output.
+     */
+    public function plugin_compatibility_check() {
+
+        // Suggestions to fix conflicts.
+        $suggestions = array(
+            'wp_seo' => __( "You need to <a href='admin.php?page=wpseo_social'>disable</a> the following WordPress SEO Options: <em>Add Open Graph meta data</em>, <em>Add Twitter card meta data</em>, and <em>Add Google+ specific post meta data</em>. ", 'dev7-ssb' ),
+        );
+
+        /**
+         * A list of plugins to test.
+         *
+         * To simply test if a plugin is active, add an item to the array
+         * like the following:
+         *
+         *     array(
+         *         // The file of the plugin for is_plugin_active() test/
+         *         'plugin' => 'plugin-folder/plugin-file.php',
+         *
+         *         // The name to put in the notice.
+         *         'plugin_name' => 'The Plugin Name',
+         *
+         *         // Not required, but will test if a function exists.
+         *         'function_exists' => 'a_function_in_the_plugins_files',
+         *
+         *         // For use on class based plugins (also not required).
+         *         'class_exists' => 'A_Class_In_The_Plugin',
+         *     ),
+         *
+         * To do specific tests (such as option conflicts), use something
+         * like the following:
+         *
+         *     array(
+         *         'plugin' => 'wordpress-seo/wp-seo.php',
+         *         'plugin_name' => 'The Plugin Name',
+         *         'test' => 'name_of_test',
+         *     ),
+         *
+         * You will have to add the test to
+         * Dev7SocialSharingBooster::plugin_compatibility_test().
+         *
+         * @var array
+         */
+        $incompatible_plugins = array(
+
+            // WordPress SEO (Yoast).
+            array(
+                'plugin'          => 'wordpress-seo/wp-seo.php',
+                'plugin_name'     => 'WordPress SEO (Yoast)',
+                'suggestion'      => $suggestions['wp_seo'],
+                'test'            => 'wp_seo',
+            ),
+        );
+
+        // Go through possible plugins and perform all the tests.
+        foreach ( $incompatible_plugins as $incompatible_plugin ) {
+            if ( 'conflict' == $this->plugin_compatibility_test( $incompatible_plugin ) ) {
+
+                // Convert to an array when we find plugins.
+                if ( ! is_array( $this->plugin_conflicts ) ) {
+                    $this->plugin_conflicts = array();
+                }
+
+                // Tell this plugin there is a conflict with this plugin.
+                $this->plugin_conflicts[] = $incompatible_plugin;
+            }
+        }
+
+        if ( 'no-conflict' != $this->plugin_conflicts ) {
+            add_action( 'admin_notices', array( $this, 'plugin_compatibility_notice' ), 99 );
+        }
+    }
+
+    /**
+     * Performs activated plugin and specific tests on suspect plugins.
+     *
+     * @param  array $incompatible_plugin The plugin data being tested.
+     *
+     * @return string `conflict` if the plugin is active or shows conflicts, otherwise `no-conflict`.
+     */
+    private function plugin_compatibility_test( $incompatible_plugin ) {
+
+        /**
+         * WordPress SEO Conflict Tests.
+         */
+        if ( isset( $incompatible_plugin['test'] ) && 'wp_seo' == $incompatible_plugin['test'] ) {
+
+            // No conflicts if the plugin isn't even active.
+            if ( 'inactive' == $this->is_conflicting_plugin_active( $incompatible_plugin ) ) {
+                return 'no-conflict';
+            }
+
+            // Get WP SEO's options.
+            $wp_seo_social_options = get_option( 'wpseo_social' );
+
+            // If any of these options are set to true, then we have a conflict.
+            $bad_options_on = array(
+                'opengraph',
+                'googleplus',
+                'twitter',
+            );
+
+            // Force the conflict message if any of these are true.
+            foreach ( $bad_options_on as $bad_option_on ) {
+                if ( isset( $wp_seo_social_options[ $bad_option_on ] ) && true == $wp_seo_social_options[ $bad_option_on ] ) {
+                    return 'conflict';
+                }
+            }
+
+            // No conflicts.
+            return 'no-conflict';
+        }
+
+        /**
+         * Plugin Activate Tests.
+         *
+         * Skipped if one of the above tests are preferred.
+         *
+         * If the plugin is active, return as being in conflict.
+         */
+        if( 'active' == $this->is_conflicting_plugin_active( $incompatible_plugin ) ) {
+            return 'conflict';
+        } else {
+            return 'no-conflict';
+        }
+
+    }
+
+    /**
+     * Detects if a plugin is activated or not.
+     *
+     * Test more than just `is_plugin_active()` as sometimes code changes
+     * or file structures move things around.
+     *
+     * @param array  $incompatible_plugin A plugin that might be considered for conflicts.
+     *
+     * @return string `active` if the plugin is found activated, `inactive` if not.
+     */
+    private function is_conflicting_plugin_active( $incompatible_plugin ) {
+
+        // Is the plugin active?
+        if ( isset( $incompatible_plugin['plugin'] ) && is_plugin_active( $incompatible_plugin['plugin'] ) ) {
+            return 'active';
+
+        // What if they move the plugin files? Does this function exist?
+        } elseif ( isset( $incompatible_plugin['function_exists'] ) && function_exists( $incompatible_plugin['function_exists'] ) ) {
+            return 'active';
+
+        // What if they renamed that function? Does this class exist still?
+        } elseif ( isset( $incompatible_plugin['class_exists'] ) && class_exists( $incompatible_plugin['class_exists'] ) ) {
+            return 'active';
+
+        // This plugin does not appear to be active.
+        } else {
+            return 'inactive';
+        }
+    }
+
+    /**
+     * Output a notice when a plugin conflict is found.
+     *
+     * @return void Outputs the notice.
+     */
+    public function plugin_compatibility_notice() {
+
+        // Only if we have possible conflicting plugins...
+        if ( is_array( $this->plugin_conflicts ) ) {
+            echo '<div class="error">';
+
+            // Track how many times we say the same suggestion.
+            $last_suggestion = '';
+
+            // Make a list of plugins.
+            foreach ( $this->plugin_conflicts as $conflicted_plugin ) {
+
+                // Build a string list of plugins.
+                $plugins .= "{$conflicted_plugin['plugin_name']}, ";
+
+                // Remove comma on just one plugin.
+                if ( sizeof( $this->plugin_conflicts ) == 1 ) {
+                    $plugins = rtrim( $plugins, ", " );
+                }
+
+                // Don't suggest the same suggestion twice.
+                if ( $last_suggestion != $conflicted_plugin['suggestion'] ) {
+
+                    // Build a string list of suggestions.
+                    // Defined in Dev7SocialSharingBooster::plugin_compatibility_check().
+                    $suggestions .= $conflicted_plugin['suggestion'];
+                }
+
+                // Set the last suggestion, so we don't output two.
+                $last_suggestion = $conflicted_plugin['suggestion'];
+            }
+
+            // Output the notice message.
+            echo sprintf( __( '<p>Social Sharing Booster found conflicts with the following plugin(s): %s. %s</p>', 'dev7-ssb' ), "<strong>$plugins</strong>", $suggestions );
+            echo '</div>';
+        }
+    }
 }
 new Dev7SocialSharingBooster();
