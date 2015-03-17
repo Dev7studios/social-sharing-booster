@@ -281,25 +281,32 @@ class Dev7SocialSharingBooster {
          *
          *     array(
          *         // The file of the plugin for is_plugin_active() test/
-         *         'plugin' => 'plugin-folder/plugin-file.php',
+         *         'plugin'          => 'plugin-folder/plugin-file.php',
          *
          *         // The name to put in the notice.
-         *         'plugin_name' => 'The Plugin Name',
+         *         'plugin_name'     => 'The Plugin Name',
          *
          *         // Not required, but will test if a function exists.
          *         'function_exists' => 'a_function_in_the_plugins_files',
          *
          *         // For use on class based plugins (also not required).
-         *         'class_exists' => 'A_Class_In_The_Plugin',
+         *         'class_exists'    => 'A_Class_In_The_Plugin',
+         *
+         *         // Offer up a suggestion on what to do, should match a key
+         *         // in the `$suggestions` array.
+         *         'suggestion'      => 'suggestion_key'
          *     ),
          *
          * To do specific tests (such as option conflicts), use something
          * like the following:
          *
          *     array(
-         *         'plugin' => 'wordpress-seo/wp-seo.php',
+         *         'plugin'      => 'wordpress-seo/wp-seo.php',
          *         'plugin_name' => 'The Plugin Name',
-         *         'test' => 'name_of_test',
+         *         'suggestion'  => 'suggestion_key'
+         *
+         *         // A test that you have defined.
+         *         'test'        => 'name_of_test',
          *     ),
          *
          * You will have to add the test to
