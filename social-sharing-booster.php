@@ -456,9 +456,6 @@ class Dev7SocialSharingBooster {
                 // Build a string list of plugins.
                 $plugins .= "{$conflicted_plugin['plugin_name']}, ";
 
-                // Remove trailing comma.
-                $plugins = rtrim( $plugins, ", " );
-
                 // Don't suggest the same suggestion twice.
                 if ( $last_suggestion != $conflicted_plugin['suggestion'] ) {
 
@@ -470,6 +467,9 @@ class Dev7SocialSharingBooster {
                 // Set the last suggestion, so we don't output two.
                 $last_suggestion = $conflicted_plugin['suggestion'];
             }
+
+            // Remove trailing comma.
+            $plugins = rtrim( $plugins, ", " );
 
             // Output the notice message.
             echo sprintf( __( '<p>Social Sharing Booster found conflicts with the following plugin(s): %s. %s</p>', 'dev7-ssb' ), "<strong>$plugins</strong>", $suggestions );
